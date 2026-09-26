@@ -135,12 +135,15 @@ export default automation(
           })
           .parse(fields)
         return {
-          clientName: task["Client Name"],
-          nextTask: task["Next Task Name"] ?? "",
+          clientName: escapeSlackText(task["Client Name"]),
+          nextTask: escapeSlackText(task["Next Task Name"] ?? ""),
           nextOwner: task["Next Owner Slack ID"] ?? "",
         }
       })
-      .filter(({ nextOwner, nextTask }) => Boolean(nextOwner && nextTask))
+      .filter(
+        ({ nextOwner, nextTask }) =>
+          /^[UW][A-Z0-9]+$/.test(nextOwner) && Boolean(nextTask),
+      )
 
     slack.sendMessage({
       conversation: parameters.slackChannelId,
@@ -148,3 +151,11 @@ export default automation(
     })
   },
 )
+
+/** Keeps provider text from becoming Slack mentions or control markup. */
+function escapeSlackText(text: string) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+}
